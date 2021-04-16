@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
 
     public Text countingTxt;
     public Text scoreTxt;
+    public Text highScoreTxt;
 
     int score = 0;
     int highestScore;
@@ -35,6 +36,7 @@ public class GameManager : MonoBehaviour
 
     SpriteRenderer judgeRenderer;
 
+    string KeyString = "HighScore";
 
     IEnumerator CountingCoroutine()
     {
@@ -99,8 +101,23 @@ public class GameManager : MonoBehaviour
         if (score > highestScore)
         {
             highestScore = score;
+            highScoreTxt.text = score.ToString();
+            PlayerPrefs.SetInt(KeyString, score);
         }
+        score = 0;  // score 초기화가 없어서 넣었습니다.
         restartAble = true;
+    }
+
+    void Awake()
+    {
+
+        if (!PlayerPrefs.HasKey(KeyString))
+        {
+            PlayerPrefs.SetInt(KeyString, 0);
+        }
+
+        highestScore = PlayerPrefs.GetInt(KeyString);  // 하이스코어 디폴트값 0
+        highScoreTxt.text = highestScore.ToString();    // 하이스코어를 저장하는 텍스트
     }
 
     // Start is called before the first frame update
