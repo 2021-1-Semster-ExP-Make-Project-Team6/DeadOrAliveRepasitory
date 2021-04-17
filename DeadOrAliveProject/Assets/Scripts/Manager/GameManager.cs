@@ -5,11 +5,16 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-
-    public GameObject enemyObject;  // 적 오브젝트
+    
+    public GameObject enemyParent;  // 적 오브젝트
     public GameObject judgeObject;  // 심판 오브젝트
     public GameObject heroObject;   // 주인공(카일) 오브젝트
-    
+
+    public GameObject[] enemyObjectArray;
+    public GameObject bossObject;
+
+    Vector3 enemyStartPos;
+    Vector3 enemyEndPos;
 
     public Text countingTxt;
     public Text scoreTxt;
@@ -33,14 +38,13 @@ public class GameManager : MonoBehaviour
 
     public bool settingTimeStop;
     float timer = 0f;
-
     float countingNum = 5;
-
     SpriteRenderer judgeRenderer;
-
     string KeyString = "HighScore";
-
     public GameObject restartCanvas;
+    bool onGameBeginning = true;
+
+
 
     //시간초 세는거
     IEnumerator CountingCoroutine()
@@ -69,27 +73,71 @@ public class GameManager : MonoBehaviour
     {
 
         //희송님 여기다가 애니메이션~
-        score = 0;
+
         judgeRenderer.color = Color.white;
         bossEmerge = false;
         isPlaying = false;
         restartAble = false;
         scoreTxt.text = score.ToString();
-        yield return new WaitForSeconds(3f);
-        isPlaying = true;
-        timer = 0;
-        if (lvLimit < 43)    // 43단계까지는 난이도가 점점 어려워집니다.
-        {
-            loadingTime -= 0.02f;
-            lvLimit++;
-            bossProb++;
-        }
+
         bossRandomEncount = Random.Range(0, 100);
         bossLoadingTime = loadingTime * 0.7f;
         if (bossRandomEncount <= bossProb)
         {
             bossEmerge = true;
         }
+        if (bossEmerge)
+        {
+            for (int i = 0; i < enemyObjectArray.Length; i++)
+            {
+                if (enemyObjectArray[i].activeSelf)
+                {
+                    enemyObjectArray[i].SetActive(false);
+                }
+            }
+            bossObject.SetActive(true);
+        }
+        else
+        {
+            bossObject.SetActive(false);
+            int randomIndex = Random.Range(0, 3);
+            for (int i = 0; i < enemyObjectArray.Length; i++)
+            {
+                if (randomIndex == i)
+                {
+                    enemyObjectArray[i].SetActive(true);
+                }
+                else
+                {
+                    enemyObjectArray[i].SetActive(false);
+                }
+            }
+        }
+       
+        if (!onGameBeginning)
+        {
+            float timer = 0;
+            while (timer < 1)
+            {
+                timer += Time.deltaTime;
+
+                enemyParent.transform.position = Vector2.Lerp(enemyStartPos, enemyEndPos, timer);
+                yield return null;
+            }
+        }
+        onGameBeginning = false;
+
+        yield return null;
+        isPlaying = true;
+        timer = 0;
+
+        if (lvLimit < 43)    // 43단계까지는 난이도가 점점 어려워집니다.
+        {
+            loadingTime -= 0.02f;
+            lvLimit++;
+            bossProb++;
+        }
+
 
         randomTime = Random.Range(0.5f, 5);
         if (bossEmerge)
@@ -115,6 +163,7 @@ public class GameManager : MonoBehaviour
         bossEmerge = false;
         isPlaying = false;
         scoreTxt.text = "실패!";
+        Debug.Log("겜오버");
         if (score > highestScore)
         {
             highestScore = score;
@@ -150,7 +199,8 @@ public class GameManager : MonoBehaviour
     void Start()
     {
 
-
+        enemyEndPos = new Vector3(1.72f, -1.51f, 0);
+        enemyStartPos = new Vector3(4.33f, -1.51f, 0);
         judgeRenderer = judgeObject.GetComponent<SpriteRenderer>();
         isPlaying = false;
         
@@ -171,7 +221,7 @@ public class GameManager : MonoBehaviour
         //scoreTxt.text = "Score: " + score.ToString();
         if (isPlaying)
         {
-            if (Input.GetMouseButton(0))
+            if (Input.GetMouseButtonDown(0))
             {
                 //이거 설정누르는데 터치로 인식되길래 일케함 
                 float mouseX = Input.mousePosition.x - 720f;
@@ -190,7 +240,7 @@ public class GameManager : MonoBehaviour
             if (timer >= randomTime && timer <= endTime)
             {
                 judgeRenderer.color = Color.blue;
-                if (Input.GetMouseButton(0))
+                if (Input.GetMouseButtonDown(0))
                 {
                     //아주잘했어요~~
                     score++;
@@ -199,9 +249,10 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                if (Input.GetMouseButton(0))
+                if (Input.GetMouseButtonDown(0))
                 {
                     //일찍눌러서 겜오버
+                    Debug.Log("일찍눌림");
                     OnGameOver();
                 }
             }
@@ -209,22 +260,11 @@ public class GameManager : MonoBehaviour
 
             if (timer > endTime)
             {
+                Debug.Log("시간넘김");
                 //시간넘겨서 겜오버
                 OnGameOver();
             }
         }
-
-        if (restartAble)
-        {
-
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                Debug.Log("뭐냐");
-                //리스타트 더미
-                StartCoroutine(StartRound());
-            }
-        }
-
 
     }
 }
