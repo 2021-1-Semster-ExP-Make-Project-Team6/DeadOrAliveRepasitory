@@ -9,6 +9,7 @@ public class GameManager : MonoBehaviour
     public GameObject enemyObject;  // 적 오브젝트
     public GameObject judgeObject;  // 심판 오브젝트
     public GameObject heroObject;   // 주인공(카일) 오브젝트
+    
 
     public Text countingTxt;
     public Text scoreTxt;
@@ -30,6 +31,7 @@ public class GameManager : MonoBehaviour
     bool isPlaying = false;
     bool restartAble = false;
 
+    public bool settingTimeStop;
     float timer = 0f;
 
     float countingNum = 5;
@@ -38,14 +40,26 @@ public class GameManager : MonoBehaviour
 
     string KeyString = "HighScore";
 
+    public GameObject restartCanvas;
+
+    //시간초 세는거
     IEnumerator CountingCoroutine()
     {
         countingNum = 5;
         while (timer < randomTime && isPlaying)
         {
-            countingNum -= Time.deltaTime;
-            countingTxt.text = countingNum.ToString("F2");
-            yield return null;
+            //설정창들어가면 멈추게
+            if (settingTimeStop)
+            {
+                yield return null;
+            }
+            else
+            {
+                countingNum -= Time.deltaTime;
+                countingTxt.text = countingNum.ToString("F2");
+                yield return null;
+            }
+
 
         }
         countingTxt.text = "";
@@ -55,6 +69,7 @@ public class GameManager : MonoBehaviour
     {
 
         //희송님 여기다가 애니메이션~
+        score = 0;
         judgeRenderer.color = Color.white;
         bossEmerge = false;
         isPlaying = false;
@@ -91,13 +106,15 @@ public class GameManager : MonoBehaviour
 
     }
 
+    //게임오버하면 다 초기화.
     void OnGameOver()
     {
+        //게임오버 애니메이션
         judgeRenderer.color = Color.black;
         timer = 0;
         bossEmerge = false;
         isPlaying = false;
-        scoreTxt.text = "ㅋㅋ개못핵";
+        scoreTxt.text = "실패!";
         if (score > highestScore)
         {
             highestScore = score;
@@ -106,6 +123,15 @@ public class GameManager : MonoBehaviour
         }
         score = 0;  // score 초기화가 없어서 넣었습니다.
         restartAble = true;
+        //게임오버 시 바로 게임오버 이미지 표출
+        restartCanvas.SetActive(true);
+    }
+
+    public void Restart()
+    {
+        //게임오버시 재시작 버튼
+        restartCanvas.SetActive(false);
+        StartCoroutine(StartRound());
     }
 
     void Awake()
@@ -115,7 +141,7 @@ public class GameManager : MonoBehaviour
         {
             PlayerPrefs.SetInt(KeyString, 0);
         }
-
+        settingTimeStop = false;
         highestScore = PlayerPrefs.GetInt(KeyString);  // 하이스코어 디폴트값 0
         highScoreTxt.text = highestScore.ToString();    // 하이스코어를 저장하는 텍스트
     }
@@ -123,19 +149,43 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        score = 0;
+
 
         judgeRenderer = judgeObject.GetComponent<SpriteRenderer>();
         isPlaying = false;
-        StartCoroutine(StartRound());
+        
+    }
+
+    public void OnGameStartButton()
+    {
+         StartCoroutine(StartRound());
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (settingTimeStop)
+        {
+            return;
+        }
         //scoreTxt.text = "Score: " + score.ToString();
         if (isPlaying)
         {
+            if (Input.GetMouseButton(0))
+            {
+                //이거 설정누르는데 터치로 인식되길래 일케함 
+                float mouseX = Input.mousePosition.x - 720f;
+                float mouseY = Input.mousePosition.y - 1280f;
+
+                Debug.Log(mouseX);
+                Debug.Log(mouseY);
+
+                if (mouseX > 324.4 && mouseX < 646.4 && mouseY > 869.8 && mouseY < 1223.8)
+                {
+                    return;
+                }
+
+            }
             timer += Time.deltaTime;
             if (timer >= randomTime && timer <= endTime)
             {
