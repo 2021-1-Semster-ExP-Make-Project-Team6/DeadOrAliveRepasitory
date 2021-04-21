@@ -1,10 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SceneManager : MonoBehaviour
 {
     public GameManager gameManager;
+    public SoundManager soundManager;
     public GameObject creditButton;
     public GameObject title;
     public GameObject startButton;
@@ -12,6 +14,7 @@ public class SceneManager : MonoBehaviour
 
     public GameObject settingCanvas;
     public GameObject creditCanvas;
+    public Text highScoreText;
 
     public AudioSource bgmSource;
 
@@ -23,19 +26,26 @@ public class SceneManager : MonoBehaviour
 
     Vector2 titleStartPos;
     Vector2 titleEndPos;
+    const string KeyString = "HighScore";
 
     void Start()
     {
         Screen.SetResolution(1440, 2560, true);
 
+        if (!PlayerPrefs.HasKey(KeyString))
+        {
+            PlayerPrefs.SetInt(KeyString, 0);
+        }
+
         creditRect = creditButton.GetComponent<RectTransform>();
         titleRect = title.GetComponent<RectTransform>();
 
         creditStartPos = creditRect.anchoredPosition;
-        creditEndPos = new Vector2(0, 1300);
+        creditEndPos = new Vector2(502, -1382);
 
         titleStartPos = titleRect.anchoredPosition;
-        titleEndPos = new Vector2(502, -1382);
+        titleEndPos =  new Vector2(0, 1600);
+        highScoreText.text = PlayerPrefs.GetInt(KeyString).ToString();
     }
 
     //UI기어나가는거
@@ -99,27 +109,39 @@ public class SceneManager : MonoBehaviour
         {
             return;
         }
+        soundManager.OpenSound();
         creditCanvas.SetActive(!creditCanvas.activeSelf);
     }
 
     public void OnSettingButton()
     {
-       gameManager.settingTimeStop = !gameManager.settingTimeStop;
+
+        gameManager.settingTimeStop = !gameManager.settingTimeStop;
 
         if (Time.timeScale == 1)
         {
+            highScoreText.text = PlayerPrefs.GetInt(KeyString).ToString();
             Time.timeScale = 0;
         }
         else
         {
             Time.timeScale = 1;
         }
-        
+        soundManager.OpenSound();
         settingCanvas.SetActive(!settingCanvas.activeSelf);
     }
 
+    public void OnSoundToggle()
+    {
+        soundManager.Mutation();
+    }
+    public void EndButton()
+    {
+        Application.Quit();
+    }
     public void GameStartButton()
     {
+        soundManager.OpenSound();
         UIGetOut();
         gameManager.OnGameStartButton();
         startButton.SetActive(false);

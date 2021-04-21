@@ -4,7 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
-{   
+{
+    public SoundManager soundManager;
+
     public GameObject enemyParent;  // 적 오브젝트
     public GameObject judgeObject;  // 심판 오브젝트
     public GameObject heroObject;   // 주인공(카일) 오브젝트
@@ -15,9 +17,7 @@ public class GameManager : MonoBehaviour
     Vector3 enemyStartPos;
     Vector3 enemyEndPos;
 
-    public Text countingTxt;
     public Text scoreTxt;
-    public Text highScoreTxt;
 
     int score = 0;
     int highestScore;
@@ -42,6 +42,9 @@ public class GameManager : MonoBehaviour
     string KeyString = "HighScore";
     public GameObject restartCanvas;
     bool onGameBeginning = true;
+    bool onRestart = false;
+    bool judgeSoundShotted = false;
+    int nowEnemyIndex = 0;
 
     [SerializeField] public Animator judgeAnim;
     [SerializeField] public Animator heroAnim;
@@ -52,76 +55,72 @@ public class GameManager : MonoBehaviour
 
 
 
-    //시간초 세는거
-    IEnumerator CountingCoroutine()
-    {
-        countingNum = 5;
-        while (timer < randomTime && isPlaying)
-        {
-            //설정창들어가면 멈추게
-            if (settingTimeStop)
-            {
-                yield return null;
-            }
-            else
-            {
-                countingNum -= Time.deltaTime;
-                countingTxt.text = countingNum.ToString("F2");
-                yield return null;
-            }
-
-
-        }
-        countingTxt.text = "";
-    }
-
     IEnumerator StartRound()
     {
 
         //희송님 여기다가 애니메이션~
         judgeRenderer.color = Color.white;
-        
+        judgeSoundShotted = false;
         bossEmerge = false;
         isPlaying = false;
         restartAble = false;
         scoreTxt.text = score.ToString();
-
-        bossRandomEncount = Random.Range(0, 100);
-        bossLoadingTime = loadingTime * 0.7f;
-        if (bossRandomEncount <= bossProb) //보스 출연확률(*)
+        if (!onRestart)
         {
-            bossEmerge = true;
+            yield return new WaitForSeconds(1f);
         }
-        if (bossEmerge) //보스
-        {
-            for (int i = 0; i < enemyObjectArray.Length; i++)
-            {
-                if (enemyObjectArray[i].activeSelf)
-                {
-                    enemyObjectArray[i].SetActive(false);
-                }
-            }
-            bossObject.SetActive(true);
-        }
-        else //졸개 랜덤 출현
-        {
-            bossObject.SetActive(false);
-            int randomIndex = Random.Range(0, 3);
-            for (int i = 0; i < enemyObjectArray.Length; i++)
-            {
-                if (randomIndex == i)
-                {
-                    enemyObjectArray[i].SetActive(true);
-                }
-                else
-                {
-                    enemyObjectArray[i].SetActive(false);
-                }
-            }
-        }
-       
+        scoreTxt.gameObject.SetActive(true);
         if (!onGameBeginning)
         {
+
+
+            heroAnim.SetBool("HeroAim", false); //카일 총 발사취소
+            bossAnim.SetBool("BossDead", false); //보스
+            firstEnemyAnim.SetBool("FirstEnemyDead", false); //1 
+            secondEnemyAnim.SetBool("SecondEnemyDead", false); //2 
+            thirdEnemyAnim.SetBool("ThirdEnemyDead", false); // 3
+            bossRandomEncount = Random.Range(0, 100);
+            bossLoadingTime = loadingTime * 0.7f;
+            if (bossRandomEncount <= bossProb) //보스 출연확률(*)
+            {
+                bossEmerge = true;
+            }
+            if (bossEmerge) //보스
+            {
+                nowEnemyIndex = 3;
+                for (int i = 0; i < enemyObjectArray.Length; i++)
+                {
+                    if (enemyObjectArray[i].activeSelf)
+                    {
+                        enemyObjectArray[i].SetActive(false);
+                    }
+                }
+                bossObject.SetActive(true);
+            }
+            else //졸개 랜덤 출현
+            {
+     
+                bossObject.SetActive(false);
+                int randomIndex = Random.Range(0, 3);
+                nowEnemyIndex = randomIndex;
+                for (int i = 0; i < enemyObjectArray.Length; i++)
+                {
+                    if (randomIndex == i)
+                    {
+                        enemyObjectArray[i].SetActive(true);
+                    }
+                    else
+                    {
+                        enemyObjectArray[i].SetActive(false);
+                    }
+                }
+            }
+            firstEnemyAnim.SetBool("FirstEnemyWalk", true); //1 
+            secondEnemyAnim.SetBool("SecondEnemyWalk", true); //2 
+            thirdEnemyAnim.SetBool("ThirdEnemyWalk", true); // 3
+            bossAnim.SetBool("BossWalk", true); //boss walk
+
+
             float timer = 0;
             while (timer < 1)
             {
@@ -129,8 +128,14 @@ public class GameManager : MonoBehaviour
                 enemyParent.transform.position = Vector2.Lerp(enemyStartPos, enemyEndPos, timer); //Enemy 제자리까지 이동(*)
                 yield return null; 
             }
+
+            firstEnemyAnim.SetBool("FirstEnemyWalk", false); //1 
+            secondEnemyAnim.SetBool("SecondEnemyWalk", false); //2 
+            thirdEnemyAnim.SetBool("ThirdEnemyWalk", false); // 3
+            bossAnim.SetBool("BossWalk", false); //boss walk
         }
         onGameBeginning = false;
+        onRestart = false;
 
         yield return null;
         isPlaying = true;
@@ -154,32 +159,38 @@ public class GameManager : MonoBehaviour
             endTime = randomTime + loadingTime;
         }
 
-        StartCoroutine(CountingCoroutine());
+       // StartCoroutine(CountingCoroutine());
 
-        bossAnim.SetBool("BossDead", false);//보스 Idle 여기다가 초기화 시키면 안되나요?
+       
     }
 
     //게임오버하면 다 초기화.
     void OnGameOver()
     {
-        //게임오버 애니메이션 초기화
-        judgeAnim.SetBool("JudgeStartFire", false); // 심판 Idle
-        judgeAnim.SetBool("JudgeShootHero", false); // 심판 Idle
-        //heroAnim.SetInteger("HeroGun", 0); //카일 Idle
-        bossAnim.SetBool("BossGunFire", false); //보스 Idle
-        //bossAnim.SetBool("BossDead", false);//보스 Idle
-        heroAnim.SetBool("HeroDie", false); //hero Idle
-
-        judgeRenderer.color = Color.black;
         timer = 0;
         bossEmerge = false;
         isPlaying = false;
+        restartAble = false;
+        StartCoroutine(GameOverCoroutine());
+    }
+
+    IEnumerator GameOverCoroutine()
+    {
+        yield return new WaitForSeconds(2f);
+        //게임오버 애니메이션 초기화
+        soundManager.OpenSound();
+        judgeAnim.SetBool("JudgeStartFire", false); // 심판 Idle
+        judgeAnim.SetBool("JudgeShootHero", false); // 심판 Idle
+        bossAnim.SetBool("BossGunFire", false); //보스 Idle
+        heroAnim.SetBool("HeroDie", false); //hero Idle
+
+        EnemyAnimationInitialize();
+
+        judgeRenderer.color = Color.black;
         scoreTxt.text = "실패!";
-        Debug.Log("겜오버");
         if (score > highestScore)
         {
             highestScore = score;
-            highScoreTxt.text = score.ToString();
             PlayerPrefs.SetInt(KeyString, score);
         }
         score = 0;  // score 초기화가 없어서 넣었습니다.
@@ -191,35 +202,98 @@ public class GameManager : MonoBehaviour
     public void Restart()
     {
         //게임오버시 재시작 버튼
+        onRestart = true;
         restartCanvas.SetActive(false);
+
+        heroAnim.SetBool("HeroAim", false); //카일 총 발사취소
+        heroAnim.SetBool("HeroDie", false); //카일 총 발사취소
+
+        EnemyAnimationInitialize();
+
+
         StartCoroutine(StartRound());
+    }
+
+    void EnemyAnimationInitialize()
+    {
+        judgeAnim.SetBool("JudgeSignal", false);
+        bossAnim.SetBool("BossDead", false); //보스
+        firstEnemyAnim.SetBool("FirstEnemyDead", false); //1 
+        secondEnemyAnim.SetBool("SecondEnemyDead", false); //2 
+        thirdEnemyAnim.SetBool("ThirdEnemyDead", false); // 3
+
+        bossAnim.SetBool("BossAim", false); //보스 조준
+        firstEnemyAnim.SetBool("FirstEnemyAim", false);
+        secondEnemyAnim.SetBool("SecondEnemyAim", false);
+        thirdEnemyAnim.SetBool("ThirdEnemyAim", false);
+
+        bossAnim.SetBool("BossGunFire", false); //보스 공격
+        firstEnemyAnim.SetBool("FirstEnemyGunFire", false);//FirstEnemy 공격
+        secondEnemyAnim.SetBool("SecondEnemyGunFire", false);
+        thirdEnemyAnim.SetBool("ThirdEnemyGunFire", false);
     }
 
     void Awake()
     {
-
         if (!PlayerPrefs.HasKey(KeyString))
         {
             PlayerPrefs.SetInt(KeyString, 0);
         }
         settingTimeStop = false;
         highestScore = PlayerPrefs.GetInt(KeyString);  // 하이스코어 디폴트값 0
-        highScoreTxt.text = highestScore.ToString();    // 하이스코어를 저장하는 텍스트
     }
 
     // Start is called before the first frame update
     void Start()
     {
 
-        enemyEndPos = new Vector3(1.72f, -1.51f, 0);
-        enemyStartPos = new Vector3(4.33f, -1.51f, 0);
+        enemyEndPos = new Vector3(1.27f, -0.99f, 0);
+        enemyStartPos = new Vector3(4.33f, -0.99f, 0);
         judgeRenderer = judgeObject.GetComponent<SpriteRenderer>();
         isPlaying = false;
+
+        bossRandomEncount = Random.Range(0, 100);
+        bossLoadingTime = loadingTime * 0.7f;
+        if (bossRandomEncount <= bossProb) //보스 출연확률(*)
+        {
+            bossEmerge = true;
+        }
+        if (bossEmerge) //보스
+        {
+            nowEnemyIndex = 3;
+            for (int i = 0; i < enemyObjectArray.Length; i++)
+            {
+                if (enemyObjectArray[i].activeSelf)
+                {
+                    enemyObjectArray[i].SetActive(false);
+                }
+            }
+            bossObject.SetActive(true);
+        }
+        else //졸개 랜덤 출현
+        {
+            bossObject.SetActive(false);
+            int randomIndex = Random.Range(0, 3);
+            nowEnemyIndex = randomIndex;
+            for (int i = 0; i < enemyObjectArray.Length; i++)
+            {
+                if (randomIndex == i)
+                {
+                    enemyObjectArray[i].SetActive(true);
+                }
+                else
+                {
+                    enemyObjectArray[i].SetActive(false);
+                }
+            }
+
+        }
 
     }
 
     public void OnGameStartButton()
     {
+        
          StartCoroutine(StartRound());
     }
 
@@ -240,9 +314,6 @@ public class GameManager : MonoBehaviour
                 float mouseX = Input.mousePosition.x - 720f;
                 float mouseY = Input.mousePosition.y - 1280f;
 
-                Debug.Log(mouseX);
-                Debug.Log(mouseY);
-
                 if (mouseX > 324.4 && mouseX < 646.4 && mouseY > 869.8 && mouseY < 1223.8)
                 {
                     return;
@@ -254,25 +325,34 @@ public class GameManager : MonoBehaviour
             if (timer >= randomTime && timer <= endTime)
             {
                 //judgeRenderer.color = Color.blue;
+                if (!judgeSoundShotted)
+                {
+                    soundManager.JudgeShot();
+                    judgeSoundShotted = true;
+                }
+         
                  judgeAnim.SetBool("JudgeSignal", false); // 심판 신호탄 준비 애니메이션(*)
                  judgeAnim.SetBool("JudgeStartFire", true); // 심판 신호탄 발사 애니메이션(*)
-                 bossAnim.SetInteger("BossDie", 1); //보스 조준
-                 firstEnemyAnim.SetInteger("FirstEnemyDie", 1);
-                 secondEnemyAnim.SetInteger("SecondEnemyDie", 1);
-                 thirdEnemyAnim.SetInteger("ThirdEnemyDie", 1);
+                 bossAnim.SetBool("BossAim", true); //보스 조준
+                 firstEnemyAnim.SetBool("FirstEnemyAim", true);
+                 secondEnemyAnim.SetBool("SecondEnemyAim", true);
+                 thirdEnemyAnim.SetBool("ThirdEnemyAim", true);
 
                 if (Input.GetMouseButtonDown(0))
                 {
                     //아주잘했어요~~
-                    heroAnim.SetInteger("HeroGun", 1); //카일 총 발사
+                    heroAnim.SetBool("HeroAim", true); //카일 총 발사
+                    soundManager.EnemyDie(nowEnemyIndex);
+                    
+                    bossAnim.SetBool("BossAim", false); //보스 조준
+                    firstEnemyAnim.SetBool("FirstEnemyAim", false);
+                    secondEnemyAnim.SetBool("SecondEnemyAim", false);
+                    thirdEnemyAnim.SetBool("ThirdEnemyAim",false);
+                    
                     bossAnim.SetBool("BossDead", true); //보스 사망
                     firstEnemyAnim.SetBool("FirstEnemyDead", true); //1 
                     secondEnemyAnim.SetBool("SecondEnemyDead", true); //2 
                     thirdEnemyAnim.SetBool("ThirdEnemyDead", true); // 3
-                    heroAnim.SetInteger("HeroGun", 2); // 카일 총 돌리기
-                    //Debug.Log("HeroGun");
-                    //enemyAnim.SetBool
-
 
                     score++;
                     judgeAnim.SetBool("JudgeStartFire", false); // 심판 Idle(*)
@@ -284,7 +364,9 @@ public class GameManager : MonoBehaviour
                 if (Input.GetMouseButtonDown(0))
                 {
                     //일찍눌러서 겜오버
-                    Debug.Log("일찍눌림");
+                    soundManager.EnemyDie(nowEnemyIndex);
+                   
+                    soundManager.KyleDie();
                     bossAnim.SetBool("BossDead", true); //보스 사망
                     firstEnemyAnim.SetBool("FirstEnemyDead", true); 
                     secondEnemyAnim.SetBool("SecondEnemyDead", true);
@@ -292,26 +374,22 @@ public class GameManager : MonoBehaviour
 
                     judgeAnim.SetBool("JudgeShootHero", true); // 심판이 카일 조준 및 쏨(*)
                     heroAnim.SetBool("HeroDie", true); //카일 die
-                    //heroAnim.SetInteger("HeroGun", 3); //임시
-                    //OnGameOver(); //잠시 주석처리 - GameOver 창이 너무 빠르게 떠서 카일/적이 죽는 애니메이션이 안 보임
+                    OnGameOver(); //잠시 주석처리 - GameOver 창이 너무 빠르게 떠서 카일/적이 죽는 애니메이션이 안 보임
                 }
             }
 
 
             if (timer > endTime)
             {
-                Debug.Log("시간넘김");
                 //시간넘겨서 겜오버
 
                 bossAnim.SetBool("BossGunFire", true); //보스 공격
                 firstEnemyAnim.SetBool("FirstEnemyGunFire", true);//FirstEnemy 공격
                 secondEnemyAnim.SetBool("SecondEnemyGunFire", true);
                 thirdEnemyAnim.SetBool("ThirdEnemyGunFire", true);
-
-                Debug.Log("Enemy의 공격 성공");
+                soundManager.KyleDie();
                 heroAnim.SetBool("HeroDie", true); //카일 사망
-                Debug.Log("카일 사망");
-                //OnGameOver(); //잠시 주석처리 - GameOver 창 때문에 카일이 죽는 애니메이션이 안 보임
+                OnGameOver(); //잠시 주석처리 - GameOver 창 때문에 카일이 죽는 애니메이션이 안 보임
             }
         }
 
