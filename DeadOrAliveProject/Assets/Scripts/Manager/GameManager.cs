@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour
     Vector3 enemyEndPos;
 
     public Text scoreTxt;
+    public Text restartScoreText;
 
     int score = 0;
     int highestScore;
@@ -171,6 +172,15 @@ public class GameManager : MonoBehaviour
         bossEmerge = false;
         isPlaying = false;
         restartAble = false;
+        if(score == 0)
+        {
+            restartScoreText.text = "$0";
+        }
+        else
+        {
+            restartScoreText.text = "$" + score.ToString() + ",000";
+        }
+        
         StartCoroutine(GameOverCoroutine());
     }
 
@@ -297,6 +307,29 @@ public class GameManager : MonoBehaviour
          StartCoroutine(StartRound());
     }
 
+    IEnumerator JudgeMotionCoroutine()
+    {
+        timer = 0;
+        bossEmerge = false;
+        isPlaying = false;
+        restartAble = false;
+        soundManager.EnemyDie(nowEnemyIndex);
+        bossAnim.SetBool("BossDead", true); //보스 사망
+        firstEnemyAnim.SetBool("FirstEnemyDead", true);
+        secondEnemyAnim.SetBool("SecondEnemyDead", true);
+        thirdEnemyAnim.SetBool("ThirdEnemyDead", true);
+        heroAnim.SetBool("HeroAim", true); //카일 총 발사
+        yield return new WaitForSeconds(0.5f);
+        soundManager.KyleDie();
+
+        judgeAnim.SetBool("JudgeShootHero", true); // 심판이 카일 조준 및 쏨(*)
+        heroAnim.SetBool("HeroAim", false); //카일 총 발사
+        heroAnim.SetBool("HeroDie", true); //카일 die
+        //yield return new WaitForSeconds(1f);
+        OnGameOver(); //잠시 주석처리 - GameOver 창이 너무 빠르게 떠서 카일/적이 죽는 애니메이션이 안 보임
+
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -364,17 +397,7 @@ public class GameManager : MonoBehaviour
                 if (Input.GetMouseButtonDown(0))
                 {
                     //일찍눌러서 겜오버
-                    soundManager.EnemyDie(nowEnemyIndex);
-                   
-                    soundManager.KyleDie();
-                    bossAnim.SetBool("BossDead", true); //보스 사망
-                    firstEnemyAnim.SetBool("FirstEnemyDead", true); 
-                    secondEnemyAnim.SetBool("SecondEnemyDead", true);
-                    thirdEnemyAnim.SetBool("ThirdEnemyDead", true);
-
-                    judgeAnim.SetBool("JudgeShootHero", true); // 심판이 카일 조준 및 쏨(*)
-                    heroAnim.SetBool("HeroDie", true); //카일 die
-                    OnGameOver(); //잠시 주석처리 - GameOver 창이 너무 빠르게 떠서 카일/적이 죽는 애니메이션이 안 보임
+                    StartCoroutine(JudgeMotionCoroutine());
                 }
             }
 
