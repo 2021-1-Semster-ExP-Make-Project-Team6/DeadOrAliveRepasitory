@@ -319,7 +319,7 @@ public class GameManager : MonoBehaviour
         secondEnemyAnim.SetBool("SecondEnemyDead", true);
         thirdEnemyAnim.SetBool("ThirdEnemyDead", true);
         heroAnim.SetBool("HeroAim", true); //카일 총 발사
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(1f);
         soundManager.KyleDie();
 
         judgeAnim.SetBool("JudgeShootHero", true); // 심판이 카일 조준 및 쏨(*)
