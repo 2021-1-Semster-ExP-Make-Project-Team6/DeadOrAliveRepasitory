@@ -12,6 +12,10 @@ public class SoundManager : MonoBehaviour
     public AudioClip[] judgeShotClips;
     public AudioClip openClip;
 
+    public AudioClip creditClip;
+    public AudioClip gameOverClip;
+    public AudioClip settingClip;
+    public AudioClip startClip;
 
     // Start is called before the first frame update
     void Start()
@@ -33,6 +37,32 @@ public class SoundManager : MonoBehaviour
     {
         effectSource[0].clip = enemyDieClips[index];
         effectSource[0].Play();
+    }
+
+    public void StartSound()
+    {
+        effectSource[3].clip = startClip;
+        effectSource[3].Play();
+    }
+    public void CreditSound()
+    {
+        effectSource[3].clip = creditClip;
+        effectSource[3].Play();
+    }
+    public void GameOverSound()
+    {
+        effectSource[3].clip = gameOverClip;
+        effectSource[3].Play();
+    }
+    public void SettingSound()
+    {
+        effectSource[3].clip = settingClip;
+        effectSource[3].Play();
+    }
+
+    public void GameOverSoundStop()
+    {
+        effectSource[3].Stop();
     }
 
     public void KyleDie()

@@ -109,7 +109,7 @@ public class SceneManager : MonoBehaviour
         {
             return;
         }
-        soundManager.OpenSound();
+        soundManager.CreditSound();
         creditCanvas.SetActive(!creditCanvas.activeSelf);
     }
 
@@ -127,7 +127,7 @@ public class SceneManager : MonoBehaviour
         {
             Time.timeScale = 1;
         }
-        soundManager.OpenSound();
+        soundManager.SettingSound();
         settingCanvas.SetActive(!settingCanvas.activeSelf);
     }
 
@@ -141,7 +141,7 @@ public class SceneManager : MonoBehaviour
     }
     public void GameStartButton()
     {
-        soundManager.OpenSound();
+        soundManager.StartSound();
         UIGetOut();
         gameManager.OnGameStartButton();
         startButton.SetActive(false);

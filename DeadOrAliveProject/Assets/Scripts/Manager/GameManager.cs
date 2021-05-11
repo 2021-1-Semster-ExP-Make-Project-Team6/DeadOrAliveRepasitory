@@ -180,7 +180,7 @@ public class GameManager : MonoBehaviour
         {
             restartScoreText.text = "$" + score.ToString() + ",000";
         }
-        
+
         StartCoroutine(GameOverCoroutine());
     }
 
@@ -188,7 +188,7 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForSeconds(2f);
         //게임오버 애니메이션 초기화
-        soundManager.OpenSound();
+        soundManager.GameOverSound();
         judgeAnim.SetBool("JudgeStartFire", false); // 심판 Idle
         judgeAnim.SetBool("JudgeShootHero", false); // 심판 Idle
         bossAnim.SetBool("BossGunFire", false); //보스 Idle
@@ -214,7 +214,7 @@ public class GameManager : MonoBehaviour
         //게임오버시 재시작 버튼
         onRestart = true;
         restartCanvas.SetActive(false);
-
+        soundManager.GameOverSoundStop();
         heroAnim.SetBool("HeroAim", false); //카일 총 발사취소
         heroAnim.SetBool("HeroDie", false); //카일 총 발사취소
 
