@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using GoogleMobileAds.Api;
+using System;
 
 public class GameManager : MonoBehaviour
 {
@@ -54,6 +56,19 @@ public class GameManager : MonoBehaviour
     [SerializeField] public Animator secondEnemyAnim;
     [SerializeField] public Animator thirdEnemyAnim; //애니메이션
 
+    private InterstitialAd interstitial;
+
+    private void RequestInterstitial()
+    {
+        //string adUnitId = 	"ca-app-pub-3940256099942544/1033173712";
+        string adUnitId = "ca-app-pub-6023793752348178/5176729232";
+        // Initialize an InterstitialAd.
+        this.interstitial = new InterstitialAd(adUnitId);
+        AdRequest request = new AdRequest.Builder().Build();
+        // Load the interstitial with the request.
+        this.interstitial.LoadAd(request);
+    }
+
 
 
     IEnumerator StartRound()
@@ -80,7 +95,7 @@ public class GameManager : MonoBehaviour
             firstEnemyAnim.SetBool("FirstEnemyDead", false); //1 
             secondEnemyAnim.SetBool("SecondEnemyDead", false); //2 
             thirdEnemyAnim.SetBool("ThirdEnemyDead", false); // 3
-            bossRandomEncount = Random.Range(0, 100);
+            bossRandomEncount = UnityEngine.Random.Range(0, 100);
             bossLoadingTime = loadingTime * 0.7f;
             if (bossRandomEncount <= bossProb) //보스 출연확률(*)
             {
@@ -102,7 +117,7 @@ public class GameManager : MonoBehaviour
             {
      
                 bossObject.SetActive(false);
-                int randomIndex = Random.Range(0, 3);
+                int randomIndex = UnityEngine.Random.Range(0, 3);
                 nowEnemyIndex = randomIndex;
                 for (int i = 0; i < enemyObjectArray.Length; i++)
                 {
@@ -150,7 +165,7 @@ public class GameManager : MonoBehaviour
         }
 
 
-        randomTime = Random.Range(0.5f, 5);
+        randomTime = UnityEngine.Random.Range(0.5f, 5);
         if (bossEmerge)
         {
             endTime = randomTime + bossLoadingTime;
@@ -165,6 +180,7 @@ public class GameManager : MonoBehaviour
        
     }
 
+    int overTime = 0;
     //게임오버하면 다 초기화.
     void OnGameOver()
     {
@@ -180,8 +196,24 @@ public class GameManager : MonoBehaviour
         {
             restartScoreText.text = "$" + score.ToString() + ",000";
         }
-
-        StartCoroutine(GameOverCoroutine());
+        if (overTime >= 1)
+        {
+            overTime = 0;
+            if (this.interstitial.IsLoaded())
+            {
+                this.interstitial.Show();
+            }
+            else
+            {
+                StartCoroutine(GameOverCoroutine());
+            }
+        }
+        else
+        {
+            overTime++;
+            StartCoroutine(GameOverCoroutine());
+        }
+        
     }
 
     IEnumerator GameOverCoroutine()
@@ -262,7 +294,7 @@ public class GameManager : MonoBehaviour
         judgeRenderer = judgeObject.GetComponent<SpriteRenderer>();
         isPlaying = false;
 
-        bossRandomEncount = Random.Range(0, 100);
+        bossRandomEncount = UnityEngine.Random.Range(0, 100);
         bossLoadingTime = loadingTime * 0.7f;
         if (bossRandomEncount <= bossProb) //보스 출연확률(*)
         {
@@ -283,7 +315,7 @@ public class GameManager : MonoBehaviour
         else //졸개 랜덤 출현
         {
             bossObject.SetActive(false);
-            int randomIndex = Random.Range(0, 3);
+            int randomIndex = UnityEngine.Random.Range(0, 3);
             nowEnemyIndex = randomIndex;
             for (int i = 0; i < enemyObjectArray.Length; i++)
             {
@@ -298,8 +330,28 @@ public class GameManager : MonoBehaviour
             }
 
         }
+        RequestInterstitial();
+        //this.interstitial.OnAdLoaded += HandleOnAdLoaded;
+        this.interstitial.OnAdClosed += HandleOnAdClosed;
+
+
 
     }
+
+    public void HandleOnAdLoaded(object sender, EventArgs args)
+    {
+        this.interstitial.Show();
+    }
+
+    public void HandleOnAdClosed(object sender, EventArgs args)
+    {
+        RequestInterstitial();
+        this.interstitial.OnAdClosed += HandleOnAdClosed;
+        StartCoroutine(GameOverCoroutine());
+
+    }
+
+
 
     public void OnGameStartButton()
     {
