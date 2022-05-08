@@ -1,5 +1,5 @@
 # 홍익대학교 ExP Make팀 2021 1학기 프로젝트 DeadOrAlive
-Unity / 2D / Android / 캐주얼게임 / [스토어 링크](https://play.google.com/store/apps/details?id=com.ExPStudio.DeadorAlivet)
+Unity / 2D / Android / 캐주얼게임 / [스토어 링크](https://play.google.com/store/apps/details?id=com.ExPStudio.DeadorAlive)
 
 # 팀구성 
 **기획** : 양승광, 조장호
